@@ -3,14 +3,13 @@ import { Button, Card, Container, Grid, Image, Segment, Sidebar, List } from 'se
 
 const SIZES = ['S', 'M', 'L', 'XL'];
 
-const Product = ({ inCart, addItem, product }) => {
+const Product = ({ product, cart }) => {
   const inStock = (size) => {
-    const want = inCart[product.sku] ? inCart[product.sku][size] : 0;
-    return product.availableSizes[size] > want;
+    return product.availableSizes[size] > cart.ordered(product, size);
   }
   const buttons = SIZES.filter(size => inStock(size)).map(size => {
-    const buy = () => { addItem(product, size); }
-    return <Button circular onClick={buy}>{size}</Button>;
+    const buy = () => { cart.addItem(product, size); }
+    return <Button circular size='mini' onClick={buy}>{size}</Button>;
   });
   
   return (
@@ -33,9 +32,9 @@ const Product = ({ inCart, addItem, product }) => {
   );
 }
 
-const ProductList = ({ inCart, addItem, products }) => {
+const ProductList = ({ products, cart }) => {
   const items = Object.values(products).map(product => 
-    <Product product={product} inCart={inCart} addItem={addItem} key={product.sku} />);
+    <Product product={product} cart={cart} key={product.sku} />);
   return (
     <Grid container stackable stretched columns={4}>
         {items}
@@ -43,8 +42,44 @@ const ProductList = ({ inCart, addItem, products }) => {
   );
 };
 
-const Cart = ({ inCart }) => {
-  const items = Object.values(inCart).map(item => <List.Item>{item.product.title}</List.Item>)
+const setPath = (obj, keys, val) => (
+  keys.length === 0 ? val : { 
+    ...obj,
+    [keys[0]]: setPath((obj[keys[0]] || {}), keys.slice(1), val)
+  }
+);
+
+
+const makeCart = () => {
+  const [ cartOpen, setCartOpen ] = useState(false);
+  const [ inCart, setInCart ] = useState({});
+  return {
+    isOpen() { return cartOpen; },
+    items() { return Object.values(inCart); },
+    toggleCart() { setCartOpen(!cartOpen); },
+    openCart() { setCartOpen(true); },
+    ordered(product, size) { 
+      return (inCart[product.sku] && inCart[product.sku].ordered && inCart[product.sku].ordered[size]) || 0;
+    },
+    addItem(product, size) {
+      setInCart(
+        setPath(
+          setPath(inCart, [product.sku, 'product'], product),
+          [product.sku, 'ordered', size],
+          this.ordered(product, size) + 1));
+      this.openCart();
+    }
+  }; 
+}
+
+const CartItem = ({ item }) => {
+  const sizes = Object.keys(item.ordered).map(size => `${size}: ${item.ordered[size]}`).join(' ');
+  
+  return <List.Item>{item.product.title} {sizes}</List.Item>;
+}
+
+const Cart = ({ cart }) => {
+  const items = cart.items().map(item => <CartItem item={item} />);
   return (
     <List>
       {items}
@@ -53,34 +88,20 @@ const Cart = ({ inCart }) => {
 }
 
 export default ({ products }) => {
-  const [ cartOpen, setCartOpen ] = useState(false);
-  const [ inCart, setInCart ] = useState({});
-  const toggleCart = () => { setCartOpen(!cartOpen); };
-  const openCart = () => { setCartOpen(true); };
-  const addItem = (product, size) => {
-    setInCart({
-      ...inCart, 
-      [product.sku]: {
-        ...inCart[product.sku],
-        product: product,
-        [size]: inCart[product.sku][size] + 1
-      }
-    });
-    openCart();
-  }
+  const cart = makeCart();
   
   return (
     <Container text>
       <Sidebar.Pushable as={Segment}>
         <Sidebar as={Segment} animation='overlay' icon='labeled'
                 inverted direction='right' vertical 
-                visible={cartOpen}
+                visible={cart.isOpen()}
         >
-          <Cart inCart={inCart} />
-          <Button onClick={toggleCart}>Close</Button>
+          <Cart cart={cart} />
+          <Button onClick={cart.toggleCart}>Close</Button>
         </Sidebar>
         <Sidebar.Pusher>
-          <ProductList products={products} inCart={inCart} addItem={addItem} />
+          <ProductList products={products} cart={cart} />
         </Sidebar.Pusher>
       </Sidebar.Pushable>
     </Container>
