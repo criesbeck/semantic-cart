@@ -4,9 +4,12 @@ import 'semantic-ui-css/semantic.min.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 
-import('./static/data/products.json')
-.then((json) => {
-   ReactDOM.render(<App products={json.default} />, document.getElementById('root'));
+const fetchAll = urls => Promise.all(urls.map(url => fetch(url).then(resp => resp.json())));
+
+fetchAll(['./data/products.json', './data/inventory.json'])
+.then(([products, inventory]) => {
+   Object.keys(inventory).forEach(sku => { products[sku].availableSizes = inventory[sku]; });
+   ReactDOM.render(<App products={products} />, document.getElementById('root'));
 });
 
 // If you want your app to work offline and load faster, you can change
