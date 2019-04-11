@@ -9,25 +9,19 @@ const Product = ({ product, cart }) => {
   }
   const buttons = SIZES.filter(size => inStock(size)).map(size => {
     const buy = () => { cart.addItem(product, size); }
-    return <Button circular size='mini' content={size} onClick={buy} />;
+    return <Button circular size='mini' content={size} 
+              style={ { padding: '6px' } }
+              onClick={buy} />;
   });
   
   return (
     <Grid.Column>
-    <Card>
-      <Card.Content>
-        <Card.Header style={{height:'4vem'}}>{ product.title }</Card.Header>
-        <Image src={`/data/products/${product.sku}_1.jpg`} />
-        <Card.Content extra>
-          <Grid columns='1'>
-            <Container>
-              { product.style }
-          </Container>
-          <Card.Content extra>{buttons}</Card.Content>
-          </Grid>
-        </Card.Content>
-      </Card.Content>
-    </Card>
+      <Card
+        header={ product.title }
+        image={`/data/products/${ product.sku }_1.jpg`}
+        description={ product.style }
+        extra={ buttons }
+      />
     </Grid.Column>
   );
 }
