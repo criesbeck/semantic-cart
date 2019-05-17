@@ -31,7 +31,7 @@ const ProductList = ({ products, cart }) => {
     <Product product={product} cart={cart} key={product.sku} />);
   return (
     <Grid container stackable padded stretched columns={4}>
-        {items}
+      {items}
     </Grid>
   );
 };
@@ -71,13 +71,20 @@ const CartItem = ({ item }) => {
   const sizeMap = item.ordered;
   const sizes = Object.keys(sizeMap).map(size => `${size}: ${sizeMap[size]}`).join(' ');
   const cost = Object.keys(sizeMap).reduce((cost, size) => cost + sizeMap[size] * item.product.price, 0);
-  return <List.Item>{item.product.title} {sizes} ${cost}</List.Item>;
+  return (
+    <List.Item>
+      <List.Content>
+        <List.Header>{item.product.title}</List.Header>
+        <List.Description>{sizes} ${cost}</List.Description>
+      </List.Content>
+    </List.Item>
+  );
 }
 
 const Cart = ({ cart }) => {
   const items = cart.items().map(item => <CartItem item={item} />);
   return (
-    <List>
+    <List inverted>
       {items}
     </List>
   );
